@@ -30,7 +30,7 @@ else:
 state = [1, theta, phi]
 
 # Plot state as Bloch sphere and save output
-plot_bloch_vector(state, title=f"Qubit with state {state}", coord_type="spherical").savefig("qubtit_state.png", bbox_inches="tight")
+plot_bloch_vector(state, title=f"Qubit with state {state}", coord_type="spherical").savefig("qubit_state.png", bbox_inches="tight")
 
 
 
