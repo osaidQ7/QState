@@ -32,19 +32,19 @@ print("Type 'q', 'quit', or 'exit' at any prompt to quit.\n")
 
 while True:
     try:
-        # --- Prompt for alpha ---
+        # Prompt for alpha
         alpha_str = input("Probability amplitude of state |0> (or 'q' to quit): ")
         if alpha_str.lower() in ('q', 'quit', 'exit'):
             print("Exiting.")
             sys.exit()
 
-        # --- Prompt for beta ---
+        # Prompt for beta 
         beta_str = input("Probability amplitude of state |1> (or 'q' to quit): ")
         if beta_str.lower() in ('q', 'quit', 'exit'):
             print("Exiting.")
             sys.exit()
 
-        # --- Evaluate inputs ---
+        # Evaluate inputs 
         alpha = safe_eval(alpha_str)
         beta  = safe_eval(beta_str)
 
@@ -55,7 +55,7 @@ while True:
     # Check normalization (allow small floating-point tolerance)
     norm_sq = abs(alpha)**2 + abs(beta)**2
     if not np.isclose(norm_sq, 1.0, atol=1e-6):
-        print(f"State not normalized (|α|²+|β|² = {norm_sq:.6f}). Try again.\n")
+        print(f"State not normalized (|α|²+|β|² = {norm_sq:.4f}). Try again.\n")
         continue
 
     # Both amplitudes cannot be zero
@@ -65,7 +65,7 @@ while True:
 
     break
 
-# ---------- Convert to spherical coordinates ----------
+# Convert to spherical coordinates
 theta = 2 * np.arccos(np.clip(abs(alpha), 0.0, 1.0))
 phi = np.angle(beta) - np.angle(alpha)
 
@@ -78,7 +78,7 @@ print(f"\nComputed angles: θ = {theta:.4f} rad, φ = {phi:.4f} rad")
 # State in spherical coordinates: [radius, theta, phi]
 state = [1.0, theta, phi]
 
-# ---------- Plot and save ----------
+# Plot as a bloch sphere and save
 plot_bloch_vector(state, title=f"Qubit state (θ={theta:.3f}, φ={phi:.3f})",
                   coord_type="spherical").savefig("qubit_state.png", bbox_inches="tight")
 print("\nBloch sphere saved as 'qubit_state.png'")
