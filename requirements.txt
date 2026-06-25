@@ -1,4 +1,5 @@
-flask
-qiskit
 numpy
+qiskit
 matplotlib
+flask
+gunicorn
