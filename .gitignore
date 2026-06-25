@@ -1,0 +1,5 @@
+*.ipynb
+*.png
+.venv/
+qubit_bloch.py
+index_2.html

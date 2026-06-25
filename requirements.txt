@@ -1,0 +1,5 @@
+numpy
+qiskit
+matplotlib
+flask
+gunicorn
