@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloch Sphere Visualizer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { display: flex; flex-wrap: wrap; gap: 30px; max-width: 1200px; margin: auto; }
+        .panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .controls { flex: 1; min-width: 300px; }
+        .visual { flex: 2; min-width: 400px; text-align: center; }
+        .info { flex: 1; min-width: 250px; }
+        input[type="text"], input[type="number"] { width: 80px; padding: 5px; }
+        input[type="range"] { width: 200px; }
+        .slider-group { margin: 10px 0; }
+        label { display: inline-block; width: 30px; }
+        .error { color: red; }
+        .state-info { margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+        button { padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .pauli-box { display: flex; gap: 20px; justify-content: center; }
+        #rhoDisplay { white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Controls -->
+    <div class="panel controls">
+        <h2>Controls</h2>
+        <div>
+            <h4>Spherical Coordinates</h4>
+            <div class="slider-group">
+                <label>θ</label>
+                <input type="range" id="thetaSlider" min="0" max="3.14159" step="0.01" value="{{ theta }}">
+                <span id="thetaDisplay">{{ "%.3f"|format(theta) }}</span>
+            </div>
+            <div class="slider-group">
+                <label>φ</label>
+                <input type="range" id="phiSlider" min="0" max="6.28319" step="0.01" value="{{ phi }}">
+                <span id="phiDisplay">{{ "%.3f"|format(phi) }}</span>
+            </div>
+        </div>
+        <hr>
+        <div>
+            <h4>Amplitudes (α, β)</h4>
+            <div>
+                <label>α (|0⟩):</label>
+                <input type="text" id="alphaInput" placeholder="e.g., 1/sqrt(2)">
+                <span style="font-size:0.8em; color:gray;">&nbsp;real or complex</span>
+            </div>
+            <div>
+                <label>β (|1⟩):</label>
+                <input type="text" id="betaInput" placeholder="e.g., 0.5+0.5j">
+            </div>
+            <button id="updateAmpsBtn">Apply Amplitudes</button>
+            <span id="ampError" class="error"></span>
+        </div>
+        <hr>
+        <div>
+            <h4>Presets</h4>
+            <button onclick="setState(0,0)">|0⟩</button>
+            <button onclick="setState(3.14159,0)">|1⟩</button>
+            <button onclick="setState(1.5708,0)">|+⟩</button>
+            <button onclick="setState(1.5708,3.14159)">|-⟩</button>
+            <button onclick="setState(1.5708,1.5708)">|+i⟩</button>
+            <button onclick="setState(1.5708,-1.5708)">|-i⟩</button>
+        </div>
+    </div>
+
+    <!-- Bloch Sphere -->
+    <div class="panel visual">
+        <h2>Bloch Sphere</h2>
+        <div id="sphereContainer">
+            <img id="blochImage" src="data:image/png;base64,{{ img_b64 }}" alt="Bloch sphere" style="max-width:100%; height:auto;">
+        </div>
+    </div>
+
+    <!-- State Information -->
+    <div class="panel info">
+        <h2>State Information</h2>
+        <div id="stateDisplay">
+            <div><strong>Ket:</strong> <span id="ketDisplay">{{ ket }}</span></div>
+            <div><strong>Density Matrix:</strong><br>
+                <span id="rhoDisplay">{{ rho_str|replace('\n', '<br>')|safe }}</span>
+            </div>
+            <div><strong>Expectation Values:</strong>
+                <div class="pauli-box">
+                    <span>⟨X⟩ = <span id="pauliX">{{ "%.4f"|format(paulis.X) }}</span></span>
+                    <span>⟨Y⟩ = <span id="pauliY">{{ "%.4f"|format(paulis.Y) }}</span></span>
+                    <span>⟨Z⟩ = <span id="pauliZ">{{ "%.4f"|format(paulis.Z) }}</span></span>
+                </div>
+            </div>
+        </div>
+        <div id="urlShare" style="margin-top:15px; font-size:0.9em;">
+            <strong>Shareable URL:</strong>
+            <input type="text" id="shareUrl" readonly style="width:100%; background:#f0f0f0; border:1px solid #ccc; padding:4px;">
+            <button onclick="copyUrl()">Copy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DOM refs
+    const thetaSlider = document.getElementById('thetaSlider');
+    const phiSlider = document.getElementById('phiSlider');
+    const thetaDisplay = document.getElementById('thetaDisplay');
+    const phiDisplay = document.getElementById('phiDisplay');
+    const blochImage = document.getElementById('blochImage');
+    const ketDisplay = document.getElementById('ketDisplay');
+    const rhoDisplay = document.getElementById('rhoDisplay');
+    const pauliX = document.getElementById('pauliX');
+    const pauliY = document.getElementById('pauliY');
+    const pauliZ = document.getElementById('pauliZ');
+    const alphaInput = document.getElementById('alphaInput');
+    const betaInput = document.getElementById('betaInput');
+    const updateAmpsBtn = document.getElementById('updateAmpsBtn');
+    const ampError = document.getElementById('ampError');
+    const shareUrl = document.getElementById('shareUrl');
+
+    // Update state
+    function updateState(payload) {
+        fetch('/api/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                ampError.textContent = data.error;
+                return;
+            }
+            ampError.textContent = '';
+            thetaSlider.value = data.theta;
+            phiSlider.value = data.phi;
+            thetaDisplay.textContent = data.theta.toFixed(3);
+            phiDisplay.textContent = data.phi.toFixed(3);
+            blochImage.src = 'data:image/png;base64,' + data.image;
+            ketDisplay.textContent = data.ket;
+            // Update density matrix – replace newline with <br>
+            rhoDisplay.innerHTML = data.rho_str.replace(/\n/g, '<br>');
+            pauliX.textContent = data.paulis.X.toFixed(4);
+            pauliY.textContent = data.paulis.Y.toFixed(4);
+            pauliZ.textContent = data.paulis.Z.toFixed(4);
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('theta', data.theta.toFixed(4));
+            url.searchParams.set('phi', data.phi.toFixed(4));
+            shareUrl.value = url.toString();
+            window.history.pushState({}, '', url);
+        })
+        .catch(err => {
+            ampError.textContent = 'Network error: ' + err;
+        });
+    }
+
+    // Slider events
+    thetaSlider.addEventListener('input', function() {
+        const t = parseFloat(this.value);
+        thetaDisplay.textContent = t.toFixed(3);
+        updateState({ theta: t, phi: parseFloat(phiSlider.value) });
+    });
+    phiSlider.addEventListener('input', function() {
+        const p = parseFloat(this.value);
+        phiDisplay.textContent = p.toFixed(3);
+        updateState({ theta: parseFloat(thetaSlider.value), phi: p });
+    });
+
+    // Amplitude update
+    updateAmpsBtn.addEventListener('click', function() {
+        const alpha = alphaInput.value.trim();
+        const beta = betaInput.value.trim();
+        if (!alpha || !beta) {
+            ampError.textContent = 'Please enter both α and β.';
+            return;
+        }
+        updateState({ alpha: alpha, beta: beta });
+    });
+
+    // Preset
+    function setState(theta, phi) {
+        thetaSlider.value = theta;
+        phiSlider.value = phi;
+        thetaDisplay.textContent = theta.toFixed(3);
+        phiDisplay.textContent = phi.toFixed(3);
+        updateState({ theta: theta, phi: phi });
+    }
+
+    // Copy URL
+    function copyUrl() {
+        shareUrl.select();
+        document.execCommand('copy');
+    }
+
+    // Initial URL
+    (function() {
+        const url = new URL(window.location);
+        if (!url.searchParams.has('theta') && !url.searchParams.has('phi')) {
+            const t = parseFloat(thetaSlider.value);
+            const p = parseFloat(phiSlider.value);
+            url.searchParams.set('theta', t.toFixed(4));
+            url.searchParams.set('phi', p.toFixed(4));
+        }
+        shareUrl.value = url.toString();
+    })();
+</script>
+</body>
+</html>
