@@ -3,160 +3,730 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bloch Sphere Visualizer</title>
+    <title>QSphere – Bloch Sphere Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { display: flex; flex-wrap: wrap; gap: 30px; max-width: 1200px; margin: auto; }
-        .panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .controls { flex: 1; min-width: 300px; }
-        .visual { flex: 2; min-width: 400px; text-align: center; }
-        .info { flex: 1; min-width: 250px; }
-        input[type="text"], input[type="number"] { width: 80px; padding: 5px; }
-        input[type="range"] { width: 200px; }
-        .slider-group { margin: 10px 0; }
-        label { display: inline-block; width: 30px; }
-        .error { color: red; }
-        .state-info { margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
-        button { padding: 6px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #45a049; }
-        .pauli-box { display: flex; gap: 20px; justify-content: center; }
-        #rhoDisplay { white-space: pre-wrap; font-family: monospace; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --white:      #FFFFFF;
+            --bg:         #F2F6FE;
+            --panel:      #FFFFFF;
+            --indigo:     #2D3A8C;
+            --indigo-mid: #4355B8;
+            --cyan:       #00C2F0;
+            --cyan-soft:  #E0F6FD;
+            --violet:     #7B5EA7;
+            --violet-soft:#F0EBF9;
+            --text:       #1A1F36;
+            --text-mid:   #4A5270;
+            --text-light: #8E96B5;
+            --border:     #DDE3F5;
+            --green:      #16A34A;
+            --green-bg:   #DCFCE7;
+            --shadow-sm:  0 1px 3px rgba(45,58,140,0.08);
+            --shadow-md:  0 4px 16px rgba(45,58,140,0.10);
+            --shadow-lg:  0 8px 32px rgba(45,58,140,0.13);
+            --radius:     14px;
+            --radius-sm:  8px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── Header ─── */
+        header {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-mark {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            background: var(--indigo);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--cyan);
+            letter-spacing: -1px;
+            user-select: none;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .brand-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--indigo);
+            letter-spacing: -0.3px;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 500;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .header-badge {
+            margin-left: auto;
+            background: var(--cyan-soft);
+            color: var(--indigo-mid);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ─── Layout ─── */
+        .workspace {
+            display: grid;
+            grid-template-columns: 300px 1fr 280px;
+            grid-template-rows: 1fr;
+            gap: 20px;
+            padding: 24px;
+            max-width: 1300px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* ─── Cards ─── */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .icon-indigo { background: #EEF0FB; color: var(--indigo); }
+        .icon-cyan   { background: var(--cyan-soft); color: #0099BB; }
+        .icon-violet { background: var(--violet-soft); color: var(--violet); }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--indigo);
+            letter-spacing: -0.1px;
+        }
+
+        .card-body {
+            padding: 20px 22px;
+        }
+
+        /* ─── Controls Panel ─── */
+        .section-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 12px;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section + .control-section {
+            border-top: 1px solid var(--border);
+            padding-top: 18px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .slider-symbol {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--indigo);
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .slider-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border);
+            cursor: pointer;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--indigo);
+            border: 2px solid white;
+            box-shadow: 0 0 0 3px rgba(45,58,140,0.15);
+            cursor: pointer;
+            transition: box-shadow 0.15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 0 5px rgba(45,58,140,0.18);
+        }
+
+        input[type="range"]:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 5px rgba(45,58,140,0.22);
+        }
+
+        .slider-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--indigo-mid);
+            background: #EEF0FB;
+            padding: 3px 8px;
+            border-radius: 5px;
+            min-width: 52px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* Amplitude inputs */
+        .amp-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .amp-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--violet);
+            width: 22px;
+            flex-shrink: 0;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text);
+            background: #FAFBFF;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--indigo-mid);
+            box-shadow: 0 0 0 3px rgba(67,85,184,0.12);
+        }
+
+        .input-hint {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: -6px;
+            margin-bottom: 10px;
+            padding-left: 30px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-primary {
+            background: var(--indigo);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--indigo-mid);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(45,58,140,0.25);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-sm {
+            padding: 6px 11px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .btn-ghost {
+            background: var(--bg);
+            color: var(--indigo);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: #EEF0FB;
+            border-color: var(--indigo-mid);
+        }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .preset-btn {
+            background: var(--bg);
+            color: var(--indigo);
+            border: 1.5px solid var(--border);
+            border-radius: 7px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 7px 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+
+        .preset-btn:hover {
+            background: #EEF0FB;
+            border-color: var(--indigo);
+            color: var(--indigo);
+            transform: translateY(-1px);
+        }
+
+        .error-msg {
+            font-size: 12px;
+            color: #C53030;
+            background: #FFF5F5;
+            border: 1px solid #FED7D7;
+            border-radius: 6px;
+            padding: 7px 10px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error-msg.visible { display: block; }
+
+        /* ─── Sphere Panel ─── */
+        .sphere-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sphere-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(ellipse at 50% 45%, #E8F2FF 0%, #F2F6FE 65%);
+            position: relative;
+            min-height: 420px;
+        }
+
+        .sphere-stage::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 0 0 var(--radius) var(--radius);
+            background:
+                radial-gradient(circle at 30% 30%, rgba(0,194,240,0.07) 0%, transparent 55%),
+                radial-gradient(circle at 70% 70%, rgba(123,94,167,0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        #blochImage {
+            max-width: 100%;
+            max-height: 420px;
+            height: auto;
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 8px 24px rgba(45,58,140,0.13));
+            transition: filter 0.3s;
+        }
+
+        #blochImage:hover {
+            filter: drop-shadow(0 12px 32px rgba(45,58,140,0.18));
+        }
+
+        /* ─── State Info Panel ─── */
+        .ket-display {
+            background: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-mid) 100%);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .ket-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 4px;
+        }
+
+        .ket-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            word-break: break-all;
+        }
+
+        .info-block {
+            margin-bottom: 16px;
+        }
+
+        .info-block-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        #rhoDisplay {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            color: var(--text-mid);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            line-height: 1.7;
+        }
+
+        .pauli-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .pauli-tile {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .pauli-op {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .pauli-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--indigo);
+        }
+
+        /* Share URL */
+        .share-row {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+        }
+
+        #shareUrl {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-mid);
+            background: var(--bg);
+            outline: none;
+            min-width: 0;
+        }
+
+        .copy-btn {
+            flex-shrink: 0;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 18px 0;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <!-- Controls -->
-    <div class="panel controls">
-        <h2>Controls</h2>
-        <div>
-            <h4>Spherical Coordinates</h4>
-            <div class="slider-group">
-                <label>θ</label>
-                <input type="range" id="thetaSlider" min="0" max="3.14159" step="0.01" value="{{ theta }}">
-                <span id="thetaDisplay">{{ "%.3f"|format(theta) }}</span>
-            </div>
-            <div class="slider-group">
-                <label>φ</label>
-                <input type="range" id="phiSlider" min="0" max="6.28319" step="0.01" value="{{ phi }}">
-                <span id="phiDisplay">{{ "%.3f"|format(phi) }}</span>
-            </div>
-        </div>
-        <hr>
-        <div>
-            <h4>Amplitudes (α, β)</h4>
-            <div>
-                <label>α (|0⟩):</label>
-                <input type="text" id="alphaInput" placeholder="e.g., 1/sqrt(2)">
-                <span style="font-size:0.8em; color:gray;">&nbsp;real or complex</span>
-            </div>
-            <div>
-                <label>β (|1⟩):</label>
-                <input type="text" id="betaInput" placeholder="e.g., 0.5+0.5j">
-            </div>
-            <button id="updateAmpsBtn">Apply Amplitudes</button>
-            <span id="ampError" class="error"></span>
-        </div>
-        <hr>
-        <div>
-            <h4>Presets</h4>
-            <button onclick="setState(0,0)">|0⟩</button>
-            <button onclick="setState(3.14159,0)">|1⟩</button>
-            <button onclick="setState(1.5708,0)">|+⟩</button>
-            <button onclick="setState(1.5708,3.14159)">|-⟩</button>
-            <button onclick="setState(1.5708,1.5708)">|+i⟩</button>
-            <button onclick="setState(1.5708,-1.5708)">|-i⟩</button>
-        </div>
+
+<!-- ─── Header ─── -->
+<header>
+    <div class="logo-mark">&lt;/&gt;</div>
+
+    <div class="brand">
+        <span class="brand-name">QSphere</span>
+        <span class="brand-sub">Bloch Sphere Visualizer</span>
     </div>
 
-    <!-- Bloch Sphere -->
-    <div class="panel visual">
-        <h2>Bloch Sphere</h2>
-        <div id="sphereContainer">
-            <img id="blochImage" src="data:image/png;base64,{{ img_b64 }}" alt="Bloch sphere" style="max-width:100%; height:auto;">
-        </div>
-    </div>
+    <span class="header-badge">Single Qubit</span>
+</header>
 
-    <!-- State Information -->
-    <div class="panel info">
-        <h2>State Information</h2>
-        <div id="stateDisplay">
-            <div><strong>Ket:</strong> <span id="ketDisplay">{{ ket }}</span></div>
-            <div><strong>Density Matrix:</strong><br>
-                <span id="rhoDisplay">{{ rho_str|replace('\n', '<br>')|safe }}</span>
-            </div>
-            <div><strong>Expectation Values:</strong>
-                <div class="pauli-box">
-                    <span>⟨X⟩ = <span id="pauliX">{{ "%.4f"|format(paulis.X) }}</span></span>
-                    <span>⟨Y⟩ = <span id="pauliY">{{ "%.4f"|format(paulis.Y) }}</span></span>
-                    <span>⟨Z⟩ = <span id="pauliZ">{{ "%.4f"|format(paulis.Z) }}</span></span>
+<!-- ─── Main Workspace ─── -->
+<div class="workspace">
+
+    <!-- ── Controls ── -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon icon-indigo">⚙</div>
+            <span class="card-title">State Controls</span>
+        </div>
+        <div class="card-body">
+
+            <!-- Spherical -->
+            <div class="control-section">
+                <div class="section-label">Spherical Coordinates</div>
+                <div class="slider-row">
+                    <span class="slider-symbol">θ</span>
+                    <div class="slider-wrap">
+                        <input type="range" id="thetaSlider" min="0" max="3.14159" step="0.01" value="{{ theta }}">
+                    </div>
+                    <span class="slider-value" id="thetaDisplay">{{ "%.3f"|format(theta) }}</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-symbol">φ</span>
+                    <div class="slider-wrap">
+                        <input type="range" id="phiSlider" min="0" max="6.28319" step="0.01" value="{{ phi }}">
+                    </div>
+                    <span class="slider-value" id="phiDisplay">{{ "%.3f"|format(phi) }}</span>
                 </div>
             </div>
-        </div>
-        <div id="urlShare" style="margin-top:15px; font-size:0.9em;">
-            <strong>Shareable URL:</strong>
-            <input type="text" id="shareUrl" readonly style="width:100%; background:#f0f0f0; border:1px solid #ccc; padding:4px;">
-            <button onclick="copyUrl()">Copy</button>
+
+            <!-- Amplitudes -->
+            <div class="control-section">
+                <div class="section-label">Amplitudes</div>
+                <div class="amp-row">
+                    <span class="amp-label">α</span>
+                    <input type="text" id="alphaInput" placeholder="e.g. 1/sqrt(2)">
+                </div>
+                <div class="amp-row">
+                    <span class="amp-label">β</span>
+                    <input type="text" id="betaInput" placeholder="e.g. 0.5+0.5j">
+                </div>
+                <div class="input-hint">Accepts real or complex expressions</div>
+                <button class="btn btn-primary" id="updateAmpsBtn" style="width:100%;">
+                    Apply Amplitudes
+                </button>
+                <div class="error-msg" id="ampError"></div>
+            </div>
+
+            <!-- Presets -->
+            <div class="control-section">
+                <div class="section-label">Basis State Presets</div>
+                <div class="presets-grid">
+                    <button class="preset-btn" onclick="setState(0,0)">|0⟩</button>
+                    <button class="preset-btn" onclick="setState(3.14159,0)">|1⟩</button>
+                    <button class="preset-btn" onclick="setState(1.5708,0)">|+⟩</button>
+                    <button class="preset-btn" onclick="setState(1.5708,3.14159)">|-⟩</button>
+                    <button class="preset-btn" onclick="setState(1.5708,1.5708)">|+i⟩</button>
+                    <button class="preset-btn" onclick="setState(1.5708,-1.5708)">|-i⟩</button>
+                </div>
+            </div>
+
         </div>
     </div>
-</div>
+
+    <!-- ── Bloch Sphere ── -->
+    <div class="card sphere-card">
+        <div class="card-header">
+            <div class="card-header-icon icon-cyan">◎</div>
+            <span class="card-title">Bloch Sphere</span>
+        </div>
+        <div class="sphere-stage">
+            <img id="blochImage" src="data:image/png;base64,{{ img_b64 }}" alt="Bloch sphere visualization">
+        </div>
+    </div>
+
+    <!-- ── State Information ── -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-header-icon icon-violet">ψ</div>
+            <span class="card-title">State Information</span>
+        </div>
+        <div class="card-body">
+
+            <div class="ket-display">
+                <div class="ket-label">State Vector</div>
+                <div class="ket-value" id="ketDisplay">{{ ket }}</div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-block-label">Density Matrix ρ</div>
+                <div id="rhoDisplay">{{ rho_str|replace('\n', '<br>')|safe }}</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="info-block">
+                <div class="info-block-label">Pauli Expectation Values</div>
+                <div class="pauli-grid">
+                    <div class="pauli-tile">
+                        <div class="pauli-op">⟨X⟩</div>
+                        <div class="pauli-val" id="pauliX">{{ "%.4f"|format(paulis.X) }}</div>
+                    </div>
+                    <div class="pauli-tile">
+                        <div class="pauli-op">⟨Y⟩</div>
+                        <div class="pauli-val" id="pauliY">{{ "%.4f"|format(paulis.Y) }}</div>
+                    </div>
+                    <div class="pauli-tile">
+                        <div class="pauli-op">⟨Z⟩</div>
+                        <div class="pauli-val" id="pauliZ">{{ "%.4f"|format(paulis.Z) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="info-block">
+                <div class="info-block-label">Share State</div>
+                <div class="share-row">
+                    <input type="text" id="shareUrl" readonly>
+                    <button class="btn btn-ghost btn-sm copy-btn" onclick="copyUrl()">Copy</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div><!-- /.workspace -->
 
 <script>
     // DOM refs
-    const thetaSlider = document.getElementById('thetaSlider');
-    const phiSlider = document.getElementById('phiSlider');
-    const thetaDisplay = document.getElementById('thetaDisplay');
-    const phiDisplay = document.getElementById('phiDisplay');
-    const blochImage = document.getElementById('blochImage');
-    const ketDisplay = document.getElementById('ketDisplay');
-    const rhoDisplay = document.getElementById('rhoDisplay');
-    const pauliX = document.getElementById('pauliX');
-    const pauliY = document.getElementById('pauliY');
-    const pauliZ = document.getElementById('pauliZ');
-    const alphaInput = document.getElementById('alphaInput');
-    const betaInput = document.getElementById('betaInput');
+    const thetaSlider   = document.getElementById('thetaSlider');
+    const phiSlider     = document.getElementById('phiSlider');
+    const thetaDisplay  = document.getElementById('thetaDisplay');
+    const phiDisplay    = document.getElementById('phiDisplay');
+    const blochImage    = document.getElementById('blochImage');
+    const ketDisplay    = document.getElementById('ketDisplay');
+    const rhoDisplay    = document.getElementById('rhoDisplay');
+    const pauliX        = document.getElementById('pauliX');
+    const pauliY        = document.getElementById('pauliY');
+    const pauliZ        = document.getElementById('pauliZ');
+    const alphaInput    = document.getElementById('alphaInput');
+    const betaInput     = document.getElementById('betaInput');
     const updateAmpsBtn = document.getElementById('updateAmpsBtn');
-    const ampError = document.getElementById('ampError');
-    const shareUrl = document.getElementById('shareUrl');
+    const ampError      = document.getElementById('ampError');
+    const shareUrl      = document.getElementById('shareUrl');
 
-    // Update state
+    function showError(msg) {
+        ampError.textContent = msg;
+        ampError.classList.toggle('visible', !!msg);
+    }
+
+    // Update state via API
     function updateState(payload) {
         fetch('/api/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-            if (data.error) {
-                ampError.textContent = data.error;
-                return;
-            }
-            ampError.textContent = '';
-            thetaSlider.value = data.theta;
-            phiSlider.value = data.phi;
+            if (data.error) { showError(data.error); return; }
+            showError('');
+            thetaSlider.value    = data.theta;
+            phiSlider.value      = data.phi;
             thetaDisplay.textContent = data.theta.toFixed(3);
-            phiDisplay.textContent = data.phi.toFixed(3);
+            phiDisplay.textContent   = data.phi.toFixed(3);
             blochImage.src = 'data:image/png;base64,' + data.image;
             ketDisplay.textContent = data.ket;
-            // Update density matrix – replace newline with <br>
-            rhoDisplay.innerHTML = data.rho_str.replace(/\n/g, '<br>');
-            const clamp = (v) => Math.abs(v) < 1e-12 ? 0 : v;
+            rhoDisplay.innerHTML   = data.rho_str.replace(/\n/g, '<br>');
+            const clamp = v => Math.abs(v) < 1e-12 ? 0 : v;
             pauliX.textContent = clamp(data.paulis.X).toFixed(4);
             pauliY.textContent = clamp(data.paulis.Y).toFixed(4);
             pauliZ.textContent = clamp(data.paulis.Z).toFixed(4);
-            // Update URL
             const url = new URL(window.location);
             url.searchParams.set('theta', data.theta.toFixed(4));
-            url.searchParams.set('phi', data.phi.toFixed(4));
+            url.searchParams.set('phi',   data.phi.toFixed(4));
             shareUrl.value = url.toString();
             window.history.pushState({}, '', url);
         })
-        .catch(err => {
-            ampError.textContent = 'Network error: ' + err;
-        });
+        .catch(err => showError('Network error: ' + err));
     }
 
-    // Slider events
+    // Sliders
     thetaSlider.addEventListener('input', function() {
         const t = parseFloat(this.value);
         thetaDisplay.textContent = t.toFixed(3);
@@ -168,24 +738,21 @@
         updateState({ theta: parseFloat(thetaSlider.value), phi: p });
     });
 
-    // Amplitude update
+    // Amplitudes
     updateAmpsBtn.addEventListener('click', function() {
         const alpha = alphaInput.value.trim();
-        const beta = betaInput.value.trim();
-        if (!alpha || !beta) {
-            ampError.textContent = 'Please enter both α and β.';
-            return;
-        }
-        updateState({ alpha: alpha, beta: beta });
+        const beta  = betaInput.value.trim();
+        if (!alpha || !beta) { showError('Please enter both α and β.'); return; }
+        updateState({ alpha, beta });
     });
 
-    // Preset
+    // Presets
     function setState(theta, phi) {
         thetaSlider.value = theta;
-        phiSlider.value = phi;
+        phiSlider.value   = phi;
         thetaDisplay.textContent = theta.toFixed(3);
-        phiDisplay.textContent = phi.toFixed(3);
-        updateState({ theta: theta, phi: phi });
+        phiDisplay.textContent   = phi.toFixed(3);
+        updateState({ theta, phi });
     }
 
     // Copy URL
@@ -194,14 +761,12 @@
         document.execCommand('copy');
     }
 
-    // Initial URL
+    // Init URL display
     (function() {
         const url = new URL(window.location);
         if (!url.searchParams.has('theta') && !url.searchParams.has('phi')) {
-            const t = parseFloat(thetaSlider.value);
-            const p = parseFloat(phiSlider.value);
-            url.searchParams.set('theta', t.toFixed(4));
-            url.searchParams.set('phi', p.toFixed(4));
+            url.searchParams.set('theta', parseFloat(thetaSlider.value).toFixed(4));
+            url.searchParams.set('phi',   parseFloat(phiSlider.value).toFixed(4));
         }
         shareUrl.value = url.toString();
     })();

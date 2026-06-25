@@ -37,7 +37,6 @@ def density_matrix(alpha, beta):
     ]
 
 def ket_notation(alpha, beta, digits=3):
-    """Return formatted |ψ⟩ = α|0⟩ + β|1⟩, omitting zero terms."""
     def fmt(c):
         if abs(c) < ZERO_TOL:
             return "0"
@@ -50,14 +49,24 @@ def ket_notation(alpha, beta, digits=3):
     
     alpha_str = fmt(alpha)
     beta_str = fmt(beta)
-    terms = []
-    # Use strict tolerance to decide inclusion
-    if abs(alpha) > ZERO_TOL:
-        terms.append(f"{alpha_str}|0⟩")
-    if abs(beta) > ZERO_TOL:
-        terms.append(f"{beta_str}|1⟩")
-    return "|ψ⟩ = " + " + ".join(terms) if terms else "|ψ⟩ = 0"
-
+    alpha_nonzero = abs(alpha) > ZERO_TOL
+    beta_nonzero = abs(beta) > ZERO_TOL
+    
+    if not alpha_nonzero and not beta_nonzero:
+        return "|ψ⟩ = 0"
+    
+    if alpha_nonzero and beta_nonzero:
+        # If beta is purely real and negative, use a minus sign without a plus
+        if abs(beta.imag) < ZERO_TOL and beta.real < 0:
+            return f"|ψ⟩ = {alpha_str}|0⟩ - {abs(beta.real):.{digits}f}|1⟩"
+        else:
+            return f"|ψ⟩ = {alpha_str}|0⟩ + {beta_str}|1⟩"
+    elif alpha_nonzero:
+        return f"|ψ⟩ = {alpha_str}|0⟩"
+    else:
+        return f"|ψ⟩ = {beta_str}|1⟩"
+    
+    
 def bloch_image(theta, phi, figsize=(5, 5), dpi=100):
     """Return base64-encoded PNG image of the Bloch sphere."""
     state = [1, theta, phi]  # spherical: radius=1

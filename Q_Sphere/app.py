@@ -19,6 +19,11 @@ safe_dict = {
 }
 
 def safe_eval(expr):
+    # Allow implicit multiplication: "sqrt(0.5)j" → "sqrt(0.5)*j"
+    expr = expr.replace(')j', ')*j')
+    # Also handle ']j' and '}j' if needed (rare)
+    expr = expr.replace(']j', ']*j')
+    expr = expr.replace('}j', '}*j')
     return eval(expr, {"__builtins__": None}, safe_dict)
 
 def parse_alpha_beta(alpha_str, beta_str):
