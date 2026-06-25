@@ -7,7 +7,7 @@ import io
 import base64
 
 # Tolerance for treating a number as zero
-ZERO_TOL = 1e-10
+ZERO_TOL = 1e-5
 
 def compute_amplitudes(theta, phi):
     """Return (alpha, beta) from spherical coords θ, φ."""
