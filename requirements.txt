@@ -1,0 +1,4 @@
+flask
+qiskit
+numpy
+matplotlib
