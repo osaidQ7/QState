@@ -6,7 +6,10 @@ from bloch_math import (
 import numpy as np
 import math
 import os
+import logging
 import traceback
+logging.basicConfig(level=logging.WARNING)
+
 
 app = Flask(__name__)
 
