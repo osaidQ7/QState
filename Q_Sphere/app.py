@@ -42,14 +42,14 @@ def parse_alpha_beta(alpha_str, beta_str):
 def format_rho(rho):
     """Convert density matrix (2x2 complex) to a readable string."""
     def fmt(z):
-        if abs(z) < 1e-12:
-            return "0"
-        if abs(z.imag) < 1e-12:
-            return f"{z.real:.4f}"
-        if abs(z.real) < 1e-12:
-            return f"{z.imag:.4f}j"
+        if abs(z) < ZERO_TOL:
+            return "0.00"
+        if abs(z.imag) < ZERO_TOL:
+            return f"{z.real:.2f}"
+        if abs(z.real) < ZERO_TOL:
+            return f"{z.imag:.2f}j"
         sign = '+' if z.imag >= 0 else ''
-        return f"{z.real:.4f}{sign}{z.imag:.4f}j"
+        return f"{z.real:.2f}{sign}{z.imag:.2f}j"
     return (f"[{fmt(rho[0][0])}, {fmt(rho[0][1])}]\n"
             f"[{fmt(rho[1][0])}, {fmt(rho[1][1])}]")
 

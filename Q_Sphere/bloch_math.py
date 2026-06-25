@@ -56,9 +56,9 @@ def ket_notation(alpha, beta, digits=3):
         return "|ψ⟩ = 0"
     
     if alpha_nonzero and beta_nonzero:
-        # If beta is purely real and negative, use a minus sign without a plus
-        if abs(beta.imag) < ZERO_TOL and beta.real < 0:
-            return f"|ψ⟩ = {alpha_str}|0⟩ - {abs(beta.real):.{digits}f}|1⟩"
+        # If beta_str starts with '-', use a minus sign and strip it
+        if beta_str.startswith('-'):
+            return f"|ψ⟩ = {alpha_str}|0⟩ - {beta_str[1:]}|1⟩"
         else:
             return f"|ψ⟩ = {alpha_str}|0⟩ + {beta_str}|1⟩"
     elif alpha_nonzero:
