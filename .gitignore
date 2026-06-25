@@ -4,3 +4,7 @@
 qubit_bloch.py
 index_2.html
 __pycache__/
+*.pyc
+.env
+*.db
+.DS_Store
