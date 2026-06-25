@@ -764,17 +764,49 @@
         .catch(err => showError('Network error: ' + err));
     }
 
-    // Sliders
+    // Debounce: wait for a pause before executing the function
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+
+    // Create debounced versions of the slider updates
+    const debouncedUpdate = debounce((t, p) => {
+        updateState({ theta: t, phi: p });
+    }, 100);  // 100 ms delay
+
+    // Slider event listeners
     thetaSlider.addEventListener('input', function() {
         const t = parseFloat(this.value);
+        const p = parseFloat(phiSlider.value);
         thetaDisplay.textContent = t.toFixed(3);
-        updateState({ theta: t, phi: parseFloat(phiSlider.value) });
+        // Immediately update the display, but defer the server call
+        debouncedUpdate(t, p);
     });
+
     phiSlider.addEventListener('input', function() {
         const p = parseFloat(this.value);
+        const t = parseFloat(thetaSlider.value);
         phiDisplay.textContent = p.toFixed(3);
-        updateState({ theta: parseFloat(thetaSlider.value), phi: p });
+        debouncedUpdate(t, p);
     });
+
+    // Sliders: change event (final value – ensures correctness)
+    thetaSlider.addEventListener('change', function() {
+        const t = parseFloat(this.value);
+        const p = parseFloat(phiSlider.value);
+        updateState({ theta: t, phi: p });
+    });
+
+    phiSlider.addEventListener('change', function() {
+        const p = parseFloat(this.value);
+        const t = parseFloat(thetaSlider.value);
+        updateState({ theta: t, phi: p });
+    });    
 
     // Amplitudes
     updateAmpsBtn.addEventListener('click', function() {

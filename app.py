@@ -37,7 +37,7 @@ def parse_alpha_beta(alpha_str, beta_str):
     except Exception as e:
         return None, None, f"Invalid expression: {e}"
     norm = abs(alpha)**2 + abs(beta)**2
-    if not np.isclose(norm, 1.0, atol=1e-6):
+    if not np.isclose(norm, 1.0, atol=1e-3):
         return None, None, f"State not normalized (|α|²+|β|² = {norm:.6f})"
     if abs(alpha) == 0 and abs(beta) == 0:
         return None, None, "Both amplitudes cannot be zero."
